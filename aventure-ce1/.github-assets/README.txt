@@ -1,0 +1,1 @@
+Final graphics integration assets are committed through Git tree blobs.
