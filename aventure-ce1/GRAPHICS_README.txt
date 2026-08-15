@@ -1,0 +1,1 @@
+Final graphics branch: generated artwork from the approved visual charter is integrated at build time.
