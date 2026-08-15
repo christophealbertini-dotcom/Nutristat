@@ -1,0 +1,1 @@
+Artwork generated from approved charter will be embedded in final build.
