@@ -13,10 +13,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Decode approved graphic charter
+      - name: Assemble approved graphic charter
         run: |
-          base64 -d aventure-ce1/app/src/main/res/drawable-nodpi/final_charter.b64 > aventure-ce1/app/src/main/res/drawable-nodpi/final_charter.webp
-          rm aventure-ce1/app/src/main/res/drawable-nodpi/final_charter.b64
+          cat aventure-ce1/art/final_charter.part{1..8} > /tmp/final_charter.b64
+          base64 --decode /tmp/final_charter.b64 > aventure-ce1/app/src/main/res/drawable-nodpi/final_charter.webp
+          file aventure-ce1/app/src/main/res/drawable-nodpi/final_charter.webp
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
