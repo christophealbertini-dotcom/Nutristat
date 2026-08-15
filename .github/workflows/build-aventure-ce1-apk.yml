@@ -2,7 +2,7 @@ name: Build Aventure CE1 APK
 
 on:
   push:
-    branches: ["aventure-ce1-apk"]
+    branches: ["aventure-ce1-apk", "aventure-ce1-final-graphics2"]
     paths:
       - "aventure-ce1/**"
       - ".github/workflows/build-aventure-ce1-apk.yml"
@@ -13,23 +13,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Apply final visual polish
+      - name: Decode approved graphic charter
         run: |
-          python3 - <<'PY'
-          from pathlib import Path
-          p=Path('aventure-ce1/app/src/main/java/com/aventurece1/game/MainActivity.java')
-          s=p.read_text()
-          s=s.replace('l.setBackground(grad(top,bottom,0));return l;}','l.setBackground(new PlaygroundDrawable(top==c("#40C7F3")));return l;}')
-          s=s.replace('l.setBackground(shape(c("#FFF8D8"),c("#F0A51A"),20,3));LinearLayout.LayoutParams','l.setBackground(shape(c("#FFF8D8"),c("#F0A51A"),20,3));l.setElevation(dp(9));LinearLayout.LayoutParams')
-          s=s.replace('x.setBackground(g);LinearLayout.LayoutParams','x.setBackground(g);x.setElevation(dp(8));LinearLayout.LayoutParams')
-          s=s.replace('void scenery(LinearLayout l){TextView deco=tx("☁️     🦋   ☀️   🦋     ☁️",19,c("#FFFFFF"));deco.setPadding(0,0,0,0);l.addView(deco);}','void scenery(LinearLayout l){Space sp=new Space(this);l.addView(sp,new LinearLayout.LayoutParams(1,dp(12)));}')
-          s=s.replace('l.addView(img(R.drawable.rules_hero,210));','l.addView(img(R.drawable.rules_hero,250));')
-          s=s.replace('heroV=img(R.drawable.heroes,135);','heroV=img(R.drawable.heroes,160);')
-          s=s.replace('monsterV=img(monsterRes(),135);','monsterV=img(monsterRes(),160);')
-          s=s.replace('l.addView(img(monsterRes(),180));','l.addView(img(monsterRes(),210));')
-          s=s.replace('l.addView(img(R.drawable.victory_family,225));','l.addView(img(R.drawable.victory_family,255));')
-          p.write_text(s)
-          PY
+          base64 -d aventure-ce1/app/src/main/res/drawable-nodpi/final_charter.b64 > aventure-ce1/app/src/main/res/drawable-nodpi/final_charter.webp
+          rm aventure-ce1/app/src/main/res/drawable-nodpi/final_charter.b64
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
@@ -44,9 +31,9 @@ jobs:
         working-directory: aventure-ce1
         run: gradle --no-daemon assembleDebug
       - name: Rename APK
-        run: cp aventure-ce1/app/build/outputs/apk/debug/app-debug.apk Aventure-CE1-test.apk
+        run: cp aventure-ce1/app/build/outputs/apk/debug/app-debug.apk Aventure-CE1-Finale-Graphique.apk
       - uses: actions/upload-artifact@v4
         with:
-          name: Aventure-CE1-test-apk
-          path: Aventure-CE1-test.apk
+          name: Aventure-CE1-Finale-Graphique
+          path: Aventure-CE1-Finale-Graphique.apk
           if-no-files-found: error
