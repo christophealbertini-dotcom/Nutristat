@@ -10,25 +10,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Install image dependency
-        run: python3 -m pip install --user pillow
-      - name: Build approved graphic atlas
-        run: |
-          mkdir -p aventure-ce1/app/src/main/res/drawable-nodpi
-          base64 --decode aventure-ce1/art/atlas_final.b64 > /tmp/final_charter.jpg
-          python3 - <<'PY'
-          from PIL import Image
-          src='/tmp/final_charter.jpg'
-          dst='aventure-ce1/app/src/main/res/drawable-nodpi/final_charter.jpg'
-          im=Image.open(src).convert('RGB')
-          assert im.size==(768,512), im.size
-          im=im.resize((1536,1024), Image.Resampling.BICUBIC)
-          im.save(dst, 'JPEG', quality=92, optimize=True)
-          chk=Image.open(dst)
-          assert chk.size==(1536,1024)
-          chk.verify()
-          print('approved atlas ready')
-          PY
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
