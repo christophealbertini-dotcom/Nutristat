@@ -1,21 +1,407 @@
 package com.aventurece1.game;
-import android.app.*;import android.content.*;import android.graphics.*;import android.graphics.drawable.*;import android.media.*;import android.os.*;import android.view.*;import android.widget.*;import java.util.*;
-public class MainActivity extends Activity{
- Random r=new Random();Handler h=new Handler();SharedPreferences p;ToneGenerator tone;String lev="CP",dif="Normal";String[] LS={"CP","CE1","CHAMPION"},DS={"Normal","Difficile","Légendaire","Chrono"};int pts,ok,ko,st,mhp,life,ans,mx;boolean over,pause;long start,pa,pt;Runnable tick;TextView sv,lv,mv,op,msg,tv,in;ImageView hero;Monster mon;Button[] ab=new Button[3];
- public void onCreate(Bundle b){super.onCreate(b);p=getSharedPreferences("avent_ce1",0);tone=new ToneGenerator(AudioManager.STREAM_MUSIC,70);home();}protected void onDestroy(){stop();tone.release();super.onDestroy();}
- int c(String x){return Color.parseColor(x);}int d(int x){return(int)(x*getResources().getDisplayMetrics().density+.5f);}GradientDrawable g(int co){GradientDrawable z=new GradientDrawable();z.setColor(co);z.setCornerRadius(d(18));return z;}LinearLayout root(int co){LinearLayout l=new LinearLayout(this);l.setOrientation(1);l.setGravity(1);l.setPadding(d(15),d(18),d(15),d(22));l.setBackgroundColor(co);return l;}ScrollView sc(View v){ScrollView s=new ScrollView(this);s.addView(v);return s;}TextView t(String s,float z,int co){TextView v=new TextView(this);v.setText(s);v.setTextSize(z);v.setTextColor(co);v.setGravity(17);v.setPadding(d(7),d(7),d(7),d(7));return v;}Button b(String s,int co){Button x=new Button(this);x.setText(s);x.setTextSize(19);x.setTextColor(-1);x.setAllCaps(false);x.setBackground(g(co));LinearLayout.LayoutParams q=new LinearLayout.LayoutParams(-1,-2);q.setMargins(d(8),d(6),d(8),d(6));x.setLayoutParams(q);return x;}ImageView im(int res,int hh){ImageView x=new ImageView(this);x.setImageResource(res);x.setScaleType(ImageView.ScaleType.CENTER_CROP);x.setAdjustViewBounds(true);x.setBackground(g(-1));x.setPadding(d(3),d(3),d(3),d(3));x.setLayoutParams(new LinearLayout.LayoutParams(-1,d(hh)));return x;}int pi(String k,int q){return p.getInt(k,q);}int mn(){return pi(lev+"_min",0);}int lm(){return pi(lev+"_max",lev.equals("CP")?100:lev.equals("CE1")?200:300);}int mm(){return pi(lev+"_mult",lev.equals("CE1")?5:10);}
- void home(){stop();LinearLayout l=root(c("#DFF6FF"));LinearLayout z=new LinearLayout(this);z.setGravity(16);z.addView(t("🌈 Aventure CE1",31,c("#164B60")),new LinearLayout.LayoutParams(0,-2,1));Button s=b("⚙️",c("#F4B400"));s.setOnClickListener(v->settings());z.addView(s,new LinearLayout.LayoutParams(d(62),d(55)));l.addView(z);l.addView(im(R.drawable.rules_hero,185));l.addView(t("Choisis ton niveau",21,c("#164B60")));int[] cs={c("#00A8E8"),c("#4CAF50"),c("#8E44AD")};for(int i=0;i<3;i++){String q=LS[i];Button x=b((i==2?"👑 ":"⭐ ")+q,cs[i]);x.setOnClickListener(v->{lev=q;diff();});l.addView(x);}setContentView(sc(l));}
- void diff(){LinearLayout l=root(c("#FFF6D8"));l.addView(t(lev,33,c("#5D4037")));int[] cs={c("#27AE60"),c("#F39C12"),c("#9B59B6"),c("#3498DB")};for(int i=0;i<4;i++){String q=DS[i],rec=q.equals("Chrono")?"⏱ Meilleur : "+(p.getLong("time_"+lev,0)==0?"0 s":secs(p.getLong("time_"+lev,0))):"🏆 Meilleur score : "+p.getInt("record_"+lev+"_"+q,0);Button x=b(q+"\n"+rec,cs[i]);x.setOnClickListener(v->{dif=q;rules();});l.addView(x);}Button x=b("← Retour",c("#7F8C8D"));x.setOnClickListener(v->home());l.addView(x);setContentView(sc(l));}
- EditText ed(int n){EditText e=new EditText(this);e.setInputType(2);e.setText(""+n);e.setGravity(17);e.setTextSize(18);e.setBackground(g(-1));e.setLayoutParams(new LinearLayout.LayoutParams(d(105),-2));return e;}void settings(){LinearLayout l=root(c("#E9F7EF"));l.addView(t("⚙️ Paramètres",29,c("#1B5E20")));Map<String,EditText[]> m=new LinkedHashMap<>();for(String q:LS){l.addView(t(q,23,c("#1B5E20")));int a=pi(q+"_min",0),x=pi(q+"_max",q.equals("CP")?100:q.equals("CE1")?200:300);EditText e1=ed(a),e2=ed(x),e3=q.equals("CP")?null:ed(pi(q+"_mult",q.equals("CE1")?5:10));LinearLayout r1=new LinearLayout(this);r1.addView(t("Mini",17,c("#333")),new LinearLayout.LayoutParams(0,-2,1));r1.addView(e1);l.addView(r1);LinearLayout r2=new LinearLayout(this);r2.addView(t("Maxi",17,c("#333")),new LinearLayout.LayoutParams(0,-2,1));r2.addView(e2);l.addView(r2);if(e3!=null){LinearLayout r3=new LinearLayout(this);r3.addView(t("Maxi multiplication",17,c("#333")),new LinearLayout.LayoutParams(0,-2,1));r3.addView(e3);l.addView(r3);}m.put(q,new EditText[]{e1,e2,e3});}Button save=b("💾 Enregistrer",c("#2ECC71"));save.setOnClickListener(v->{SharedPreferences.Editor E=p.edit();for(String q:LS){EditText[] a=m.get(q);int mi=num(a[0],0),ma=Math.max(mi+1,num(a[1],100));E.putInt(q+"_min",Math.max(0,mi));E.putInt(q+"_max",ma);if(a[2]!=null)E.putInt(q+"_mult",Math.max(3,Math.min(10,num(a[2],5))));}E.apply();home();});l.addView(save);setContentView(sc(l));}int num(EditText e,int q){try{return Integer.parseInt(e.getText().toString());}catch(Exception x){return q;}}
- void rules(){LinearLayout l=root(c("#FFF3CD"));l.addView(t(dif.equals("Chrono")?"⏱️ MODE CHRONO":"⚔️ RÈGLES DU JEU",29,c("#7A4E00")));l.addView(im(R.drawable.rules_hero,205));String q=dif.equals("Chrono")?"Bats les 4 monstres le plus vite possible !\n\n⚠️ Attention, sois prudent, tu n'as qu'une seule vie.\n\n⏸ Le bouton Pause arrête le chrono.":"Prêt à affronter le monstre ?\n\n✅ Bonne réponse : +10 points et -1 vie au monstre.\n\n❌ Mauvaise réponse : -5 points et -1 vie.\n\nSi tu n'as plus de vie, le monstre a gagné.";TextView a=t(q,19,c("#4E342E"));a.setBackground(g(-1));l.addView(a);Button x=b("🚀 C'est parti !",c("#27AE60"));x.setOnClickListener(v->start());l.addView(x);setContentView(sc(l));}
- void start(){pts=ok=ko=0;st=1;over=pause=false;pt=0;mx=dif.equals("Normal")?Math.max(mn()+1,(int)(lm()*.7)):lm();life=dif.equals("Normal")?10:(dif.equals("Chrono")?1:5);start=System.currentTimeMillis();game();if(dif.equals("Chrono"))timer();}String name(){return st==1?"Monstre Caca":st==2?"Monstre qui pète":st==3?"Monstre Zombie":"Monstre Rigolo";}int mc(){return st==1?c("#9B5D2E"):st==2?c("#8E44AD"):st==3?c("#6AA84F"):c("#3498DB");}
- void game(){mhp=5;LinearLayout l=root(c("#DDF7E3"));LinearLayout top=new LinearLayout(this);top.setGravity(17);LinearLayout hb=new LinearLayout(this);hb.setOrientation(1);hb.setGravity(17);hero=im(R.drawable.rules_hero,130);hero.setLayoutParams(new LinearLayout.LayoutParams(d(140),d(130)));hb.addView(hero);lv=t("",17,c("#C62828"));hb.addView(lv);top.addView(hb,new LinearLayout.LayoutParams(0,-2,1));LinearLayout mb=new LinearLayout(this);mb.setOrientation(1);mb.setGravity(17);mon=new Monster(this,st,mc());mb.addView(mon,new LinearLayout.LayoutParams(d(145),d(125)));mb.addView(t(name(),15,c("#4E342E")));mv=t("",17,c("#C62828"));mb.addView(mv);top.addView(mb,new LinearLayout.LayoutParams(0,-2,1));l.addView(top);sv=t("",18,c("#164B60"));l.addView(sv);if(dif.equals("Chrono")){tv=t(time(elapsed()),20,c("#1565C0"));l.addView(tv);}l.addView(t("Niveau "+st+" / 4",16,c("#2E7D32")));op=t("",40,c("#17202A"));op.setBackground(g(-1));l.addView(op);msg=t("À toi de jouer !",18,c("#6A1B9A"));l.addView(msg);if(dif.equals("Légendaire"))keypad(l);else choices(l);if(dif.equals("Chrono")){Button pb=b("⏸ Pause",c("#3498DB"));pb.setOnClickListener(v->toggle(pb));l.addView(pb);}setContentView(sc(l));hud();next();}
- void choices(LinearLayout l){LinearLayout q=new LinearLayout(this);int[] cs={c("#00A8E8"),c("#F4B400"),c("#E84393")};for(int i=0;i<3;i++){final int n=i;ab[i]=b("",cs[i]);ab[i].setTextSize(24);ab[i].setOnClickListener(v->submit((Integer)ab[n].getTag()));q.addView(ab[i],new LinearLayout.LayoutParams(0,-2,1));}l.addView(q);}void keypad(LinearLayout l){in=t("—",32,c("#222"));in.setBackground(g(-1));l.addView(in);int n=1;for(int y=0;y<3;y++){LinearLayout q=new LinearLayout(this);for(int x=0;x<3;x++){final int k=n++;Button z=b(""+k,c("#3498DB"));z.setOnClickListener(v->dig(k));q.addView(z,new LinearLayout.LayoutParams(0,-2,1));}l.addView(q);}LinearLayout q=new LinearLayout(this);Button z=b("0",c("#3498DB"));z.setOnClickListener(v->dig(0));q.addView(z,new LinearLayout.LayoutParams(0,-2,1));Button e=b("⌫",c("#E67E22"));e.setOnClickListener(v->{in.setTag("");in.setText("—");});q.addView(e,new LinearLayout.LayoutParams(0,-2,1));l.addView(q);Button vv=b("✅ VALIDER",c("#27AE60"));vv.setOnClickListener(v->{String s=in.getTag()==null?"":in.getTag().toString();if(s.length()>0)submit(Integer.parseInt(s));});l.addView(vv);}void dig(int k){if(pause)return;String s=in.getTag()==null?"":in.getTag().toString();if(s.length()<4){s+=k;in.setTag(s);in.setText(s);}}
- void hud(){StringBuilder a=new StringBuilder(),m=new StringBuilder();for(int i=0;i<life;i++)a.append("❤️");for(int i=0;i<mhp;i++)m.append("❤️");lv.setText("Vies "+(a.length()==0?"💔":a));mv.setText(m.length()==0?"💥":m.toString());sv.setText(dif.equals("Chrono")?"⏱ Course contre la montre":"🏆 Score : "+pts);}int smax(){int n=mn(),sp=Math.max(1,mx-n);double f=st==1?.4:st==2?.7:1;return Math.max(n+2,n+(int)(sp*f));}
- void next(){if(over||pause)return;int M=smax(),N=Math.min(mn(),M-1),typ=r.nextInt(lev.equals("CP")?2:3);if(typ==2&&!mul(M))add(N,M);else if(typ==1)sub(N,M);else if(typ==0)add(N,M);if(dif.equals("Légendaire")){in.setTag("");in.setText("—");}else fill(M);}void add(int N,int M){ans=N+r.nextInt(Math.max(1,M-N+1));int a=N+r.nextInt(Math.max(1,ans-N+1));op.setText(a+" + "+(ans-a)+" = ?");}void sub(int N,int M){int a=0,z=0;for(int i=0;i<300;i++){a=N+r.nextInt(Math.max(1,M-N+1));z=N+r.nextInt(Math.max(1,M-N+1));if(z>a){int q=a;a=z;z=q;}if(a+z<=100)break;}while(a+z>100&&z>0)z--;ans=a-z;op.setText(a+" − "+z+" = ?");}boolean mul(int M){ArrayList<int[]> q=new ArrayList<>();for(int a=2;a<=Math.max(3,Math.min(10,mm()));a++)for(int z=3;z<=10;z++)if(a*z<=M)q.add(new int[]{a,z});if(q.isEmpty())return false;int[] x=q.get(r.nextInt(q.size()));ans=x[0]*x[1];op.setText(x[0]+" × "+x[1]+" = ?");return true;}void fill(int M){int gi=r.nextInt(3),v[]={-1,-1,-1};v[gi]=ans;for(int i=0;i<3;i++)if(i!=gi){int z;do{int d=1+r.nextInt(Math.max(3,Math.min(15,M/10+2)));z=Math.max(0,ans+(r.nextBoolean()?d:-d));}while(z==ans||z==v[0]||z==v[1]||z==v[2]);v[i]=z;}for(int i=0;i<3;i++){ab[i].setText(""+v[i]);ab[i].setTag(v[i]);ab[i].setEnabled(true);}}
- void submit(int v){if(pause||over)return;if(v==ans){ok++;mhp--;if(!dif.equals("Chrono"))pts+=10;msg.setText("🐶 ATTAQUE !  👾 Aïe !");tone.startTone(ToneGenerator.TONE_PROP_ACK,180);anim(true);}else{ko++;life--;if(!dif.equals("Chrono"))pts=Math.max(0,pts-5);msg.setText("👾 ATTAQUE !  👧🐶 Ouille !");tone.startTone(ToneGenerator.TONE_PROP_NACK,220);anim(false);}hud();if(!dif.equals("Légendaire"))for(Button x:ab)x.setEnabled(false);if(life<=0){over=true;h.postDelayed(()->finish(false),600);}else if(mhp<=0)h.postDelayed(()->summary(),600);else h.postDelayed(()->next(),600);}void anim(boolean a){View x=a?hero:mon,y=a?mon:hero;x.animate().translationX(a?d(25):-d(25)).setDuration(150).withEndAction(()->x.animate().translationX(0).setDuration(170)).start();y.animate().rotationBy(6).setDuration(100).withEndAction(()->y.animate().rotation(0).setDuration(120)).start();}
- void summary(){if(dif.equals("Chrono"))hold();tone.startTone(ToneGenerator.TONE_DTMF_5,220);LinearLayout l=root(c("#FFF4B8"));l.addView(t("🎉 BRAVO !",38,c("#D35400")));l.addView(t("Tu as vaincu le monstre !\n"+name(),23,c("#6D4C41")));String q="✅ Bonnes réponses : "+ok+"\n❌ Mauvaises réponses : "+ko+(dif.equals("Chrono")?"\n⏱ Temps : "+time(elapsed()):"\n🏆 Score total : "+pts);l.addView(t(q,20,c("#333")));Button x=b(st<4?"➡️ Monstre suivant":"🏁 Résultat",c("#27AE60"));x.setOnClickListener(v->{if(st==4){if(dif.equals("Chrono"))resume();finish(true);}else{st++;if(dif.equals("Chrono"))resume();game();}});l.addView(x);setContentView(sc(l));}
- int stars(){return pts>190?5:pts>=171?4:pts>=141?3:pts>=100?2:1;}void finish(boolean win){over=true;long e=elapsed();stop();if(win)tone.startTone(ToneGenerator.TONE_DTMF_9,400);LinearLayout l=root(win?c("#DFF6DD"):c("#FFE0E0"));if(win)l.addView(im(R.drawable.victory_family,225));l.addView(t(win?"🏆 VICTOIRE !":"💥 Le monstre a gagné",33,win?c("#1B5E20"):c("#B71C1C")));boolean rec;if(dif.equals("Chrono")){long old=p.getLong("time_"+lev,0);rec=win&&(old==0||e<old);if(rec)p.edit().putLong("time_"+lev,e).apply();l.addView(t("Score chrono : "+secs(e),29,c("#1565C0")));}else{int old=p.getInt("record_"+lev+"_"+dif,0);rec=pts>old;if(rec)p.edit().putInt("record_"+lev+"_"+dif,pts).apply();l.addView(t("Score final : "+pts+" / 200",28,c("#164B60")));String s="";for(int i=0;i<stars();i++)s+="⭐";l.addView(t(s,38,c("#F4B400")));}if(rec)l.addView(t("🎉 RECORD ! 🎉",32,c("#E67E22")));Button x=b("🏠 Menu principal",c("#3498DB"));x.setOnClickListener(v->home());l.addView(x);setContentView(sc(l));}
- void timer(){tick=new Runnable(){public void run(){if(tv!=null&&!pause)tv.setText(time(elapsed()));if(!over)h.postDelayed(this,100);}};h.post(tick);}long elapsed(){long n=pause?pa:System.currentTimeMillis();return Math.max(0,n-start-pt);}String time(long m){long s=m/1000;return String.format(Locale.FRANCE,"%02d:%02d.%d",s/60,s%60,(m%1000)/100);}String secs(long m){return String.format(Locale.FRANCE,"%.1f s",m/1000.0);}void toggle(Button x){if(!pause){pause=true;pa=System.currentTimeMillis();x.setText("▶ Reprendre");msg.setText("⏸ PAUSE");}else{resume();x.setText("⏸ Pause");msg.setText("C'est reparti !");}}void hold(){if(!pause){pause=true;pa=System.currentTimeMillis();}}void resume(){if(pause){pause=false;pt+=System.currentTimeMillis()-pa;}}void stop(){if(tick!=null)h.removeCallbacks(tick);tick=null;}public void onBackPressed(){home();}
- public static class Monster extends View{Paint p=new Paint(1);int s,co;Monster(Context c,int a,int b){super(c);s=a;co=b;}protected void onDraw(Canvas x){float w=getWidth(),h=getHeight();p.setColor(co);x.drawOval(w*.12f,h*.25f,w*.88f,h*.92f,p);x.drawCircle(w*.5f,h*.28f,w*.23f,p);if(s==2){p.setColor(Color.rgb(150,230,70));x.drawCircle(w*.08f,h*.4f,w*.09f,p);x.drawCircle(w*.92f,h*.32f,w*.1f,p);}if(s==3){p.setColor(Color.rgb(90,120,70));x.drawRect(w*.33f,0,w*.62f,h*.17f,p);}if(s==4){p.setColor(Color.rgb(255,130,20));x.drawCircle(w*.15f,h*.25f,w*.1f,p);x.drawCircle(w*.85f,h*.2f,w*.1f,p);}p.setColor(-1);x.drawCircle(w*.38f,h*.38f,w*.1f,p);x.drawCircle(w*.64f,h*.38f,w*.1f,p);p.setColor(Color.DKGRAY);x.drawCircle(w*.4f,h*.4f,w*.04f,p);x.drawCircle(w*.62f,h*.4f,w*.04f,p);p.setColor(Color.rgb(100,20,20));x.drawOval(w*.3f,h*.56f,w*.7f,h*.78f,p);p.setColor(Color.rgb(255,100,130));x.drawOval(w*.43f,h*.67f,w*.68f,h*.83f,p);}}
+
+import android.app.*;
+import android.content.*;
+import android.graphics.*;
+import android.graphics.drawable.GradientDrawable;
+import android.media.*;
+import android.os.*;
+import android.view.*;
+import android.widget.*;
+import java.util.*;
+
+public class MainActivity extends Activity {
+    private final Random random = new Random();
+    private final Handler handler = new Handler();
+    private SharedPreferences prefs;
+    private ToneGenerator tone;
+
+    private final String[] LEVELS = {"CP", "CE1", "CHAMPION"};
+    private final String[] DIFFS = {"Normal", "Difficile", "Légendaire", "Chrono"};
+    private String level = "CP", difficulty = "Normal";
+
+    private int score, totalGood, totalBad, stageGood, stageBad, stage, monsterHp, lives, correct, maxGame;
+    private boolean gameOver, paused;
+    private long startMs, pauseStarted, pausedTotal;
+    private Runnable timerTick;
+
+    private TextView scoreView, livesView, monsterHpView, operationView, messageView, timerView, typedView;
+    private ImageView heroView;
+    private MonsterView monsterView;
+    private final Button[] answers = new Button[3];
+
+    @Override public void onCreate(Bundle b) {
+        super.onCreate(b);
+        prefs = getSharedPreferences("avent_ce1", MODE_PRIVATE);
+        try { tone = new ToneGenerator(AudioManager.STREAM_MUSIC, 80); } catch (Throwable ignored) {}
+        immersive();
+        showHome();
+    }
+
+    @Override public void onWindowFocusChanged(boolean hasFocus) {
+        super.onWindowFocusChanged(hasFocus);
+        if (hasFocus) immersive();
+    }
+
+    private void immersive() {
+        getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
+        if (Build.VERSION.SDK_INT >= 30) {
+            getWindow().setDecorFitsSystemWindows(false);
+            WindowInsetsController c = getWindow().getInsetsController();
+            if (c != null) {
+                c.hide(WindowInsets.Type.statusBars() | WindowInsets.Type.navigationBars());
+                c.setSystemBarsBehavior(WindowInsetsController.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE);
+            }
+        } else {
+            getWindow().getDecorView().setSystemUiVisibility(
+                    View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY |
+                    View.SYSTEM_UI_FLAG_FULLSCREEN |
+                    View.SYSTEM_UI_FLAG_HIDE_NAVIGATION |
+                    View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN |
+                    View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION |
+                    View.SYSTEM_UI_FLAG_LAYOUT_STABLE);
+        }
+    }
+
+    private int col(String hex) { return Color.parseColor(hex); }
+    private int dp(int v) { return (int)(v * getResources().getDisplayMetrics().density + .5f); }
+
+    private GradientDrawable bg(int start, int end, float radius) {
+        GradientDrawable g = new GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM, new int[]{start, end});
+        g.setCornerRadius(dp((int)radius));
+        return g;
+    }
+
+    private GradientDrawable solid(int color, float radius) {
+        GradientDrawable g = new GradientDrawable();
+        g.setColor(color); g.setCornerRadius(dp((int)radius));
+        return g;
+    }
+
+    private LinearLayout root(int top, int bottom) {
+        LinearLayout l = new LinearLayout(this);
+        l.setOrientation(LinearLayout.VERTICAL);
+        l.setGravity(Gravity.CENTER_HORIZONTAL);
+        l.setPadding(dp(14), dp(16), dp(14), dp(18));
+        l.setBackground(bg(top, bottom, 0));
+        return l;
+    }
+
+    private ScrollView scroll(View v) {
+        ScrollView s = new ScrollView(this);
+        s.setFillViewport(true);
+        s.addView(v);
+        return s;
+    }
+
+    private TextView text(String s, float size, int color) {
+        TextView v = new TextView(this);
+        v.setText(s); v.setTextSize(size); v.setTextColor(color); v.setGravity(Gravity.CENTER);
+        v.setPadding(dp(7), dp(7), dp(7), dp(7));
+        return v;
+    }
+
+    private Button button(String label, int c1, int c2) {
+        Button b = new Button(this);
+        b.setText(label); b.setTextSize(19); b.setTextColor(Color.WHITE); b.setAllCaps(false);
+        b.setBackground(bg(c1, c2, 18));
+        b.setElevation(dp(4));
+        LinearLayout.LayoutParams p = new LinearLayout.LayoutParams(-1, -2);
+        p.setMargins(dp(8), dp(6), dp(8), dp(6)); b.setLayoutParams(p);
+        b.setPadding(dp(10), dp(12), dp(10), dp(12));
+        return b;
+    }
+
+    private ImageView image(int res, int height) {
+        ImageView x = new ImageView(this);
+        x.setImageResource(res); x.setScaleType(ImageView.ScaleType.CENTER_CROP); x.setAdjustViewBounds(true);
+        x.setBackground(solid(Color.WHITE, 22)); x.setClipToOutline(true); x.setElevation(dp(5));
+        x.setLayoutParams(new LinearLayout.LayoutParams(-1, dp(height)));
+        return x;
+    }
+
+    private LinearLayout card(int color) {
+        LinearLayout c = new LinearLayout(this);
+        c.setOrientation(LinearLayout.VERTICAL); c.setGravity(Gravity.CENTER); c.setPadding(dp(12),dp(12),dp(12),dp(12));
+        c.setBackground(solid(color, 22)); c.setElevation(dp(5));
+        LinearLayout.LayoutParams p = new LinearLayout.LayoutParams(-1,-2); p.setMargins(dp(8),dp(8),dp(8),dp(8)); c.setLayoutParams(p);
+        return c;
+    }
+
+    private int prefInt(String k, int def) { return prefs.getInt(k, def); }
+    private int minLevel() { return prefInt(level + "_min", 0); }
+    private int maxLevel() { return prefInt(level + "_max", level.equals("CP") ? 100 : level.equals("CE1") ? 200 : 300); }
+    private int maxMult() { return prefInt(level + "_mult", level.equals("CE1") ? 5 : 10); }
+
+    private void setScreen(View v) { setContentView(v); immersive(); }
+
+    private void showHome() {
+        stopTimer(); gameOver = true;
+        LinearLayout l = root(col("#55C9FF"), col("#DFF7FF"));
+
+        LinearLayout top = new LinearLayout(this); top.setGravity(Gravity.CENTER_VERTICAL);
+        TextView title = text("🌟 Aventure CE1", 31, col("#083B66")); title.setGravity(Gravity.LEFT | Gravity.CENTER_VERTICAL);
+        top.addView(title, new LinearLayout.LayoutParams(0,-2,1));
+        Button settings = button("⚙", col("#FFB300"), col("#F57C00")); settings.setTextSize(24);
+        settings.setOnClickListener(v -> showSettings());
+        top.addView(settings, new LinearLayout.LayoutParams(dp(64),dp(58)));
+        l.addView(top);
+
+        l.addView(image(R.drawable.rules_hero, 210));
+        TextView choose = text("Choisis ton niveau", 23, col("#083B66")); choose.setPadding(0,dp(13),0,dp(6)); l.addView(choose);
+
+        int[][] colors = {{0xFF008DFF,0xFF0069D8},{0xFF36C943,0xFF159B2A},{0xFFA74DEB,0xFF7131BA}};
+        for (int i=0;i<LEVELS.length;i++) {
+            final String q = LEVELS[i];
+            Button b = button((i==2?"👑  ":"⭐  ") + q, colors[i][0], colors[i][1]); b.setTextSize(24);
+            b.setOnClickListener(v -> { level=q; showDifficulty(); }); l.addView(b);
+        }
+
+        Button quit = button("🚪 Quitter", col("#EF5350"), col("#C62828"));
+        quit.setOnClickListener(v -> confirmQuitApp()); l.addView(quit);
+        l.addView(text("4 monstres • calcul mental • records", 15, col("#365A75")));
+        setScreen(scroll(l));
+    }
+
+    private void showDifficulty() {
+        LinearLayout l = root(col("#FFF1A8"), col("#FFF9DF"));
+        l.addView(text(level, 34, col("#5D3B00")));
+        l.addView(text("Choisis la difficulté", 21, col("#6B4E16")));
+        int[][] cc={{0xFF39C95A,0xFF168B38},{0xFFFFA726,0xFFE66A00},{0xFFB655DE,0xFF7B2CBF},{0xFF28A7F2,0xFF096FBE}};
+        for(int i=0;i<DIFFS.length;i++) {
+            final String d = DIFFS[i];
+            String record;
+            if (d.equals("Chrono")) {
+                long best = prefs.getLong("time_"+level,0);
+                record = "⏱ Meilleur temps : " + (best==0 ? "0 s" : seconds(best));
+            } else record = "🏆 Meilleur score : " + prefs.getInt("record_"+level+"_"+d,0);
+            Button b=button(d+"\n"+record,cc[i][0],cc[i][1]); b.setOnClickListener(v->{difficulty=d;showRules();}); l.addView(b);
+        }
+        Button back=button("← Retour",col("#78909C"),col("#546E7A")); back.setOnClickListener(v->showHome()); l.addView(back);
+        setScreen(scroll(l));
+    }
+
+    private EditText numberEdit(int n) {
+        EditText e=new EditText(this); e.setInputType(2); e.setText(String.valueOf(n)); e.setGravity(Gravity.CENTER); e.setTextSize(18);
+        e.setTextColor(col("#263238")); e.setBackground(solid(Color.WHITE,12)); e.setPadding(dp(8),dp(8),dp(8),dp(8));
+        e.setLayoutParams(new LinearLayout.LayoutParams(dp(110),-2)); return e;
+    }
+
+    private void showSettings() {
+        LinearLayout l=root(col("#B9F6CA"),col("#E8F5E9"));
+        l.addView(text("⚙ Paramètres",30,col("#145A32")));
+        final Map<String,EditText[]> fields=new LinkedHashMap<>();
+        for(String q:LEVELS) {
+            LinearLayout box=card(Color.WHITE); box.addView(text(q,24,col("#0B7A3E")));
+            EditText mn=numberEdit(prefInt(q+"_min",0));
+            EditText mx=numberEdit(prefInt(q+"_max",q.equals("CP")?100:q.equals("CE1")?200:300));
+            EditText mm=q.equals("CP")?null:numberEdit(prefInt(q+"_mult",q.equals("CE1")?5:10));
+            box.addView(settingRow("Mini",mn)); box.addView(settingRow("Maxi",mx));
+            if(mm!=null) box.addView(settingRow("Maxi multiplication",mm));
+            fields.put(q,new EditText[]{mn,mx,mm}); l.addView(box);
+        }
+        Button save=button("💾 Enregistrer",col("#2ECC71"),col("#159447"));
+        save.setOnClickListener(v->{
+            SharedPreferences.Editor ed=prefs.edit();
+            for(String q:LEVELS){EditText[] a=fields.get(q);int mi=parse(a[0],0),ma=Math.max(mi+1,parse(a[1],100));ed.putInt(q+"_min",Math.max(0,mi));ed.putInt(q+"_max",ma);if(a[2]!=null)ed.putInt(q+"_mult",Math.max(3,Math.min(10,parse(a[2],5))));}
+            ed.apply(); Toast.makeText(this,"Paramètres enregistrés",Toast.LENGTH_SHORT).show(); showHome();
+        }); l.addView(save);
+        Button back=button("← Retour",col("#78909C"),col("#546E7A"));back.setOnClickListener(v->showHome());l.addView(back);
+        setScreen(scroll(l));
+    }
+
+    private LinearLayout settingRow(String label, EditText field){
+        LinearLayout r=new LinearLayout(this);r.setGravity(Gravity.CENTER_VERTICAL);r.setPadding(dp(4),dp(5),dp(4),dp(5));
+        r.addView(text(label,17,col("#333333")),new LinearLayout.LayoutParams(0,-2,1));r.addView(field);return r;
+    }
+    private int parse(EditText e,int d){try{return Integer.parseInt(e.getText().toString().trim());}catch(Exception ex){return d;}}
+
+    private void showRules(){
+        LinearLayout l=root(col("#FFD86F"),col("#FFF5CB"));
+        l.addView(text(difficulty.equals("Chrono")?"⏱ MODE CHRONO":"⚔ RÈGLES DU JEU",29,col("#7A3E00")));
+        l.addView(image(R.drawable.rules_hero,200));
+        LinearLayout box=card(Color.WHITE);
+        String q=difficulty.equals("Chrono")
+                ?"Bats les 4 monstres le plus vite possible !\n\n⚠ Attention, sois prudent : tu n'as qu'une seule vie.\n\n⏸ Le bouton Pause arrête complètement le chrono."
+                :"Prêt à affronter le monstre ?\n\n✅ Chaque bonne réponse fait gagner 10 points et retire une vie au monstre.\n\n❌ Chaque mauvaise réponse fait perdre 5 points et une vie.\n\nSi tu n'as plus de vie, le monstre a gagné.";
+        box.addView(text(q,19,col("#4E342E")));l.addView(box);
+        Button go=button("🚀 C'est parti !",col("#38D34F"),col("#149631"));go.setTextSize(23);go.setOnClickListener(v->startGame());l.addView(go);
+        Button back=button("← Retour",col("#78909C"),col("#546E7A"));back.setOnClickListener(v->showDifficulty());l.addView(back);
+        setScreen(scroll(l));
+    }
+
+    private void startGame(){
+        score=totalGood=totalBad=0;stage=1;gameOver=false;paused=false;pausedTotal=0;
+        int base=maxLevel();maxGame=difficulty.equals("Normal")?Math.max(minLevel()+1,(int)Math.floor(base*.70)):base;
+        lives=difficulty.equals("Normal")?10:(difficulty.equals("Chrono")?1:5);
+        startMs=System.currentTimeMillis();showGame();if(difficulty.equals("Chrono"))startTimer();
+    }
+
+    private String monsterName(){return stage==1?"Monstre Caca":stage==2?"Monstre qui pète":stage==3?"Monstre Zombie":"Monstre Rigolo";}
+    private int monsterColor(){return stage==1?col("#A86027"):stage==2?col("#8E44AD"):stage==3?col("#68A83E"):col("#198CFF");}
+
+    private void showGame(){
+        monsterHp=5;stageGood=stageBad=0;
+        LinearLayout l=root(col("#74D6FF"),col("#E7FFD9"));
+
+        LinearLayout header=new LinearLayout(this);header.setGravity(Gravity.CENTER_VERTICAL);
+        TextView stageText=text("Monstre "+stage+" / 4",17,col("#063B5C"));header.addView(stageText,new LinearLayout.LayoutParams(0,-2,1));
+        Button leave=button("✕ Quitter",col("#FF6B6B"),col("#D93636"));leave.setTextSize(13);leave.setOnClickListener(v->confirmLeaveGame());
+        header.addView(leave,new LinearLayout.LayoutParams(dp(105),dp(48)));l.addView(header);
+
+        LinearLayout arena=new LinearLayout(this);arena.setGravity(Gravity.CENTER);arena.setPadding(0,dp(5),0,dp(5));
+        LinearLayout heroes=card(Color.WHITE);heroes.setLayoutParams(new LinearLayout.LayoutParams(0,-2,1));
+        heroView=image(R.drawable.rules_hero,125);heroView.setLayoutParams(new LinearLayout.LayoutParams(-1,dp(125)));heroes.addView(heroView);
+        heroes.addView(text("Nos héros",16,col("#1565C0")));livesView=text("",15,col("#C62828"));heroes.addView(livesView);arena.addView(heroes);
+
+        LinearLayout monster=card(Color.WHITE);monster.setLayoutParams(new LinearLayout.LayoutParams(0,-2,1));
+        monsterView=new MonsterView(this,stage,monsterColor());monster.addView(monsterView,new LinearLayout.LayoutParams(-1,dp(125)));
+        monster.addView(text(monsterName(),15,col("#6D3D18")));monsterHpView=text("",15,col("#C62828"));monster.addView(monsterHpView);arena.addView(monster);
+        l.addView(arena);
+
+        LinearLayout stats=card(col("#FFF7C2"));
+        scoreView=text("",19,col("#164B60"));stats.addView(scoreView);
+        if(difficulty.equals("Chrono")){timerView=text(formatTime(elapsed()),25,col("#0D63B8"));stats.addView(timerView);}l.addView(stats);
+
+        operationView=text("",42,col("#17202A"));operationView.setBackground(solid(Color.WHITE,18));operationView.setElevation(dp(4));
+        LinearLayout.LayoutParams opP=new LinearLayout.LayoutParams(-1,-2);opP.setMargins(dp(8),dp(8),dp(8),dp(8));operationView.setLayoutParams(opP);l.addView(operationView);
+        messageView=text("À toi de jouer !",18,col("#7B1FA2"));l.addView(messageView);
+
+        if(difficulty.equals("Légendaire"))addKeypad(l);else addChoices(l);
+        if(difficulty.equals("Chrono")){Button pauseButton=button("⏸ Pause",col("#2196F3"),col("#1565C0"));pauseButton.setOnClickListener(v->togglePause(pauseButton));l.addView(pauseButton);}
+        setScreen(scroll(l));updateHud();nextQuestion();
+    }
+
+    private void addChoices(LinearLayout l){
+        LinearLayout row=new LinearLayout(this);int[][] cc={{0xFF00A8E8,0xFF0076B8},{0xFFFFB300,0xFFF57C00},{0xFFE84393,0xFFB5286B}};
+        for(int i=0;i<3;i++){final int ix=i;answers[i]=button("",cc[i][0],cc[i][1]);answers[i].setTextSize(24);answers[i].setOnClickListener(v->{Object tag=answers[ix].getTag();if(tag instanceof Integer)submit((Integer)tag);});row.addView(answers[i],new LinearLayout.LayoutParams(0,dp(62),1));}
+        l.addView(row);
+    }
+
+    private void addKeypad(LinearLayout l){
+        typedView=text("—",32,col("#222222"));typedView.setBackground(solid(Color.WHITE,14));l.addView(typedView);
+        int n=1;for(int y=0;y<3;y++){LinearLayout row=new LinearLayout(this);for(int x=0;x<3;x++){final int k=n++;Button b=button(String.valueOf(k),col("#3498DB"),col("#1474B8"));b.setOnClickListener(v->digit(k));row.addView(b,new LinearLayout.LayoutParams(0,dp(55),1));}l.addView(row);}
+        LinearLayout row=new LinearLayout(this);Button zero=button("0",col("#3498DB"),col("#1474B8"));zero.setOnClickListener(v->digit(0));row.addView(zero,new LinearLayout.LayoutParams(0,dp(55),1));Button erase=button("⌫ Effacer",col("#FF8C42"),col("#E35F12"));erase.setOnClickListener(v->{typedView.setTag("");typedView.setText("—");});row.addView(erase,new LinearLayout.LayoutParams(0,dp(55),1));l.addView(row);
+        Button ok=button("✅ VALIDER",col("#38D34F"),col("#149631"));ok.setTextSize(25);ok.setOnClickListener(v->{String s=typedView.getTag()==null?"":typedView.getTag().toString();if(s.isEmpty())Toast.makeText(this,"Tape une réponse",Toast.LENGTH_SHORT).show();else submit(Integer.parseInt(s));});l.addView(ok);
+    }
+
+    private void digit(int k){if(paused||gameOver)return;String s=typedView.getTag()==null?"":typedView.getTag().toString();if(s.length()<4){s+=k;typedView.setTag(s);typedView.setText(s);}}
+
+    private void updateHud(){
+        StringBuilder h=new StringBuilder(),m=new StringBuilder();for(int i=0;i<lives;i++)h.append("❤️");for(int i=0;i<monsterHp;i++)m.append("❤️");
+        livesView.setText("Vies  "+(h.length()==0?"💔":h));monsterHpView.setText("PV  "+(m.length()==0?"💥":m));
+        scoreView.setText(difficulty.equals("Chrono")?"⏱ Bats-les le plus vite possible":"🏆 Score : "+score);
+    }
+
+    private int stageMax(){int n=minLevel(),span=Math.max(1,maxGame-n);double f=stage==1?.40:stage==2?.70:1.0;return Math.max(n+2,n+(int)Math.floor(span*f));}
+
+    private void nextQuestion(){
+        if(gameOver||paused)return;int M=stageMax();int type=random.nextInt(level.equals("CP")?2:3);
+        if(type==2 && !makeMultiplication(M))makeAddition(M);else if(type==1)makeSubtraction(M);else makeAddition(M);
+        if(difficulty.equals("Légendaire")){typedView.setTag("");typedView.setText("—");}else fillChoices(M);
+    }
+
+    private void makeAddition(int M){int min=Math.max(0,Math.min(minLevel(),M));correct=min+random.nextInt(Math.max(1,M-min+1));int a=min+random.nextInt(Math.max(1,correct-min+1));int b=correct-a;operationView.setText(a+" + "+b+" = ?");}
+
+    private void makeSubtraction(int M){
+        int min=Math.max(0,minLevel()),upper=Math.min(M,100);ArrayList<int[]> valid=new ArrayList<>();
+        for(int a=min;a<=upper;a++)for(int b=min;b<=a;b++)if(a+b<=100)valid.add(new int[]{a,b});
+        if(valid.isEmpty()){int a=Math.min(50,upper),b=0;correct=a;operationView.setText(a+" − "+b+" = ?");return;}
+        int[] q=valid.get(random.nextInt(valid.size()));correct=q[0]-q[1];operationView.setText(q[0]+" − "+q[1]+" = ?");
+    }
+
+    private boolean makeMultiplication(int M){
+        ArrayList<int[]> valid=new ArrayList<>();int tableMax=Math.max(3,Math.min(10,maxMult()));
+        for(int a=2;a<=tableMax;a++)for(int b=3;b<=10;b++)if(a*b<=M)valid.add(new int[]{a,b});
+        if(valid.isEmpty())return false;int[] q=valid.get(random.nextInt(valid.size()));correct=q[0]*q[1];operationView.setText(q[0]+" × "+q[1]+" = ?");return true;
+    }
+
+    private void fillChoices(int M){
+        int goodIndex=random.nextInt(3);int[] vals={Integer.MIN_VALUE,Integer.MIN_VALUE,Integer.MIN_VALUE};vals[goodIndex]=correct;
+        for(int i=0;i<3;i++)if(i!=goodIndex){int v,tries=0;do{int delta=1+random.nextInt(Math.max(3,Math.min(18,M/10+3)));v=Math.max(0,correct+(random.nextBoolean()?delta:-delta));tries++;}while((v==correct||contains(vals,v))&&tries<100);vals[i]=v;}
+        for(int i=0;i<3;i++){answers[i].setText(String.valueOf(vals[i]));answers[i].setTag(vals[i]);answers[i].setEnabled(true);answers[i].setAlpha(1f);}
+    }
+    private boolean contains(int[] vals,int v){for(int n:vals)if(n==v)return true;return false;}
+
+    private void submit(int value){
+        if(paused||gameOver)return;
+        if(value==correct){totalGood++;stageGood++;monsterHp--;if(!difficulty.equals("Chrono"))score+=10;messageView.setText("🐶 ATTAQUE !   👾 « Aïe ! »");soundGood();animateAttack(true);}
+        else{totalBad++;stageBad++;lives--;if(!difficulty.equals("Chrono"))score=Math.max(0,score-5);messageView.setText("👾 ATTAQUE !   👧🐶 « Ouille ! »");soundBad();animateAttack(false);}
+        updateHud();if(!difficulty.equals("Légendaire"))for(Button b:answers){b.setEnabled(false);b.setAlpha(.65f);}
+        if(lives<=0){gameOver=true;handler.postDelayed(()->showFinal(false),650);return;}
+        if(monsterHp<=0){handler.postDelayed(this::showStageSummary,650);return;}
+        handler.postDelayed(this::nextQuestion,650);
+    }
+
+    private void animateAttack(boolean heroesAttack){
+        View attacker=heroesAttack?heroView:monsterView;View victim=heroesAttack?monsterView:heroView;
+        attacker.animate().translationX(heroesAttack?dp(28):-dp(28)).scaleX(1.08f).scaleY(1.08f).setDuration(140).withEndAction(()->attacker.animate().translationX(0).scaleX(1).scaleY(1).setDuration(180)).start();
+        victim.animate().rotationBy(8).alpha(.55f).setDuration(100).withEndAction(()->victim.animate().rotation(0).alpha(1).setDuration(180)).start();
+    }
+
+    private void showStageSummary(){
+        if(difficulty.equals("Chrono"))holdTimer();soundLevel();
+        LinearLayout l=root(col("#FFE66D"),col("#FFF8D6"));
+        l.addView(text("🎉 BRAVO !",40,col("#D35400")));l.addView(text("Tu as vaincu le "+monsterName()+" !",23,col("#6D3D18")));
+        LinearLayout box=card(Color.WHITE);box.addView(text("✅ Bonnes réponses : "+stageGood+"\n❌ Mauvaises réponses : "+stageBad+(difficulty.equals("Chrono")?"\n⏱ Temps actuel : "+formatTime(elapsed()):"\n🏆 Score total : "+score),20,col("#333333")));l.addView(box);
+        Button next=button(stage<4?"➡ Monstre suivant":"🏁 Voir le résultat",col("#38D34F"),col("#149631"));
+        next.setOnClickListener(v->{if(stage>=4){if(difficulty.equals("Chrono"))resumeTimer();showFinal(true);}else{stage++;if(difficulty.equals("Chrono"))resumeTimer();showGame();}});l.addView(next);
+        setScreen(scroll(l));
+    }
+
+    private int stars(){if(score>190)return 5;if(score>=171)return 4;if(score>=141)return 3;if(score>=100)return 2;return 1;}
+
+    private void showFinal(boolean win){
+        gameOver=true;long elapsed=elapsed();stopTimer();if(win)soundWin();
+        LinearLayout l=root(win?col("#8BE28B"):col("#FFB3B3"),win?col("#EDFFE7"):col("#FFF0F0"));
+        if(win)l.addView(image(R.drawable.victory_family,235));
+        l.addView(text(win?"🏆 VICTOIRE !":"💥 Le monstre a gagné",34,win?col("#145A32"):col("#A00000")));
+        boolean record=false;
+        if(difficulty.equals("Chrono")){
+            long old=prefs.getLong("time_"+level,0);record=win&&(old==0||elapsed<old);if(record)prefs.edit().putLong("time_"+level,elapsed).apply();
+            l.addView(text("⏱ Score chrono : "+seconds(elapsed),29,col("#0D63B8")));
+        } else {
+            int old=prefs.getInt("record_"+level+"_"+difficulty,0);record=score>old;if(record)prefs.edit().putInt("record_"+level+"_"+difficulty,score).apply();
+            l.addView(text("Score final : "+score+" / 200",29,col("#164B60")));StringBuilder s=new StringBuilder();for(int i=0;i<stars();i++)s.append("⭐");l.addView(text(s.toString(),39,col("#FFB300")));
+        }
+        if(record)l.addView(text("🎉 RECORD ! 🎉",32,col("#E65100")));
+        l.addView(text("✅ Bonnes réponses : "+totalGood+"   •   ❌ Mauvaises : "+totalBad,18,col("#333333")));
+        Button home=button("🏠 Menu principal",col("#2196F3"),col("#0D63B8"));home.setOnClickListener(v->showHome());l.addView(home);
+        Button quit=button("🚪 Quitter",col("#EF5350"),col("#C62828"));quit.setOnClickListener(v->confirmQuitApp());l.addView(quit);
+        setScreen(scroll(l));
+    }
+
+    private void startTimer(){
+        stopTimer();timerTick=new Runnable(){@Override public void run(){if(!gameOver){if(timerView!=null&&!paused)timerView.setText(formatTime(elapsed()));handler.postDelayed(this,100);}}};handler.post(timerTick);
+    }
+    private long elapsed(){long now=paused?pauseStarted:System.currentTimeMillis();return Math.max(0,now-startMs-pausedTotal);}
+    private String formatTime(long ms){long s=ms/1000;return String.format(Locale.FRANCE,"%02d:%02d.%d",s/60,s%60,(ms%1000)/100);}
+    private String seconds(long ms){return String.format(Locale.FRANCE,"%.1f s",ms/1000.0);}
+    private void togglePause(Button b){if(!paused){paused=true;pauseStarted=System.currentTimeMillis();b.setText("▶ Reprendre");messageView.setText("⏸ PAUSE");}else{resumeTimer();b.setText("⏸ Pause");messageView.setText("C'est reparti !");}}
+    private void holdTimer(){if(!paused){paused=true;pauseStarted=System.currentTimeMillis();}}
+    private void resumeTimer(){if(paused){paused=false;pausedTotal+=System.currentTimeMillis()-pauseStarted;}}
+    private void stopTimer(){if(timerTick!=null)handler.removeCallbacks(timerTick);timerTick=null;}
+
+    private void soundGood(){tone(ToneGenerator.TONE_PROP_ACK,180);} private void soundBad(){tone(ToneGenerator.TONE_PROP_NACK,230);} private void soundLevel(){tone(ToneGenerator.TONE_DTMF_5,280);} private void soundWin(){tone(ToneGenerator.TONE_DTMF_9,550);handler.postDelayed(()->tone(ToneGenerator.TONE_PROP_ACK,350),250);}
+    private void tone(int type,int ms){try{if(tone!=null)tone.startTone(type,ms);}catch(Throwable ignored){}}
+
+    private void confirmQuitApp(){new AlertDialog.Builder(this).setTitle("Quitter Aventure CE1 ?").setMessage("À bientôt pour une nouvelle aventure !").setNegativeButton("Annuler",null).setPositiveButton("Quitter",(d,w)->{stopTimer();finishAffinity();}).show();}
+    private void confirmLeaveGame(){boolean wasPaused=paused;if(difficulty.equals("Chrono")&&!paused)holdTimer();new AlertDialog.Builder(this).setTitle("Quitter la partie ?").setMessage("La partie en cours sera perdue.").setNegativeButton("Continuer",(d,w)->{if(difficulty.equals("Chrono")&&!wasPaused)resumeTimer();immersive();}).setPositiveButton("Quitter la partie",(d,w)->showHome()).setOnCancelListener(d->{if(difficulty.equals("Chrono")&&!wasPaused)resumeTimer();immersive();}).show();}
+
+    @Override public void onBackPressed(){if(!gameOver)confirmLeaveGame();else showHome();}
+    @Override protected void onDestroy(){stopTimer();try{if(tone!=null)tone.release();}catch(Throwable ignored){}super.onDestroy();}
+
+    public static class MonsterView extends View {
+        private final Paint p=new Paint(Paint.ANTI_ALIAS_FLAG);private final int stage,color;
+        MonsterView(Context c,int s,int co){super(c);stage=s;color=co;setLayerType(View.LAYER_TYPE_SOFTWARE,null);}
+        @Override protected void onDraw(Canvas x){super.onDraw(x);float w=getWidth(),h=getHeight();
+            p.setShadowLayer(10,0,6,0x55000000);p.setColor(color);x.drawOval(w*.10f,h*.22f,w*.90f,h*.92f,p);p.clearShadowLayer();
+            if(stage==1){p.setColor(0xFF6B3518);x.drawOval(w*.34f,h*.04f,w*.66f,h*.36f,p);}
+            if(stage==2){p.setColor(0xFFB8F240);x.drawCircle(w*.08f,h*.43f,w*.08f,p);x.drawCircle(w*.92f,h*.35f,w*.10f,p);p.setColor(0xFF7ED321);x.drawCircle(w*.04f,h*.35f,w*.04f,p);x.drawCircle(w*.96f,h*.48f,w*.05f,p);}
+            if(stage==3){p.setColor(0xFF344C2E);x.drawRect(w*.33f,h*.03f,w*.67f,h*.22f,p);p.setColor(0xFF814C72);x.drawRect(w*.45f,h*.02f,w*.55f,h*.16f,p);}
+            if(stage==4){p.setColor(0xFFFF8C21);x.drawCircle(w*.18f,h*.20f,w*.12f,p);x.drawCircle(w*.82f,h*.18f,w*.12f,p);p.setColor(0xFFFFD43B);x.drawCircle(w*.18f,h*.20f,w*.05f,p);x.drawCircle(w*.82f,h*.18f,w*.05f,p);}
+            p.setColor(Color.WHITE);x.drawCircle(w*.38f,h*.40f,w*.11f,p);x.drawCircle(w*.64f,h*.40f,w*.11f,p);p.setColor(0xFF1B1B1B);x.drawCircle(w*.40f,h*.41f,w*.045f,p);x.drawCircle(w*.62f,h*.41f,w*.045f,p);
+            p.setColor(0xFF7B1515);x.drawOval(w*.27f,h*.56f,w*.73f,h*.80f,p);p.setColor(0xFFFF6D9B);x.drawOval(w*.40f,h*.68f,w*.70f,h*.84f,p);
+            p.setColor(0xFFFFF3C4);for(int i=0;i<4;i++){float cx=w*(.34f+i*.105f);x.drawRect(cx,h*.57f,cx+w*.055f,h*.65f,p);} }
+    }
 }
