@@ -2,7 +2,7 @@ name: Build Aventure CE1 APK
 
 on:
   push:
-    branches: ["aventure-ce1-apk", "aventure-ce1-final-graphics2"]
+    branches: ["aventure-ce1-apk", "aventure-ce1-final-graphics2", "aventure-ce1-final-graphics10"]
   workflow_dispatch:
 
 jobs:
@@ -29,4 +29,16 @@ jobs:
         with:
           name: Aventure-CE1-Finale-Graphique
           path: Aventure-CE1-Finale-Graphique.apk
+          if-no-files-found: error
+      - name: Package Android build tools
+        run: |
+          mkdir -p android-sign-tools/lib
+          cp "$ANDROID_HOME/build-tools/35.0.0/apksigner" android-sign-tools/
+          cp "$ANDROID_HOME/build-tools/35.0.0/zipalign" android-sign-tools/
+          cp "$ANDROID_HOME/build-tools/35.0.0/lib/apksigner.jar" android-sign-tools/lib/
+          chmod +x android-sign-tools/apksigner android-sign-tools/zipalign
+      - uses: actions/upload-artifact@v4
+        with:
+          name: android-sign-tools
+          path: android-sign-tools
           if-no-files-found: error
