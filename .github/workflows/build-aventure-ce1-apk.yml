@@ -3,9 +3,6 @@ name: Build Aventure CE1 APK
 on:
   push:
     branches: ["aventure-ce1-apk", "aventure-ce1-final-graphics2"]
-    paths:
-      - "aventure-ce1/**"
-      - ".github/workflows/build-aventure-ce1-apk.yml"
   workflow_dispatch:
 
 jobs:
@@ -15,9 +12,16 @@ jobs:
       - uses: actions/checkout@v4
       - name: Assemble approved graphic charter
         run: |
-          cat aventure-ce1/art/final_charter.part{1..8} > /tmp/final_charter.b64
+          mkdir -p aventure-ce1/app/src/main/res/drawable-nodpi
+          cat aventure-ce1/art/final_charter.part{1..8} | tr -cd 'A-Za-z0-9+/=' > /tmp/final_charter.b64
           base64 --decode /tmp/final_charter.b64 > aventure-ce1/app/src/main/res/drawable-nodpi/final_charter.webp
           file aventure-ce1/app/src/main/res/drawable-nodpi/final_charter.webp
+          python3 - <<'PY'
+          from PIL import Image
+          p='aventure-ce1/app/src/main/res/drawable-nodpi/final_charter.webp'
+          im=Image.open(p); im.verify()
+          print('approved atlas verified')
+          PY
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
