@@ -1,0 +1,38 @@
+name: Coach Running - APK Android
+on:
+  push:
+    branches: [ coach-running-mvp ]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Reconstituer le projet Android
+        shell: bash
+        run: |
+          mkdir -p coach-running
+          cat coach-parts/part-*.b64 | base64 --decode > coach-running-build.tar.xz
+          echo "20c2a10065cacb2b2ef87a85ddb17aec597a38105beb7bd5337dc31e6d07d600  coach-running-build.tar.xz" | sha256sum -c -
+          tar -xJf coach-running-build.tar.xz -C coach-running
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: android-actions/setup-android@v3
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.11.1'
+      - name: Compiler APK debug
+        run: gradle -p coach-running --no-daemon assembleDebug
+      - uses: actions/upload-artifact@v4
+        with:
+          name: CoachRunning-Android-APK
+          path: coach-running/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
+      - uses: actions/upload-artifact@v4
+        with:
+          name: CoachRunning-Source
+          path: coach-running-build.tar.xz

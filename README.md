@@ -1,17 +1,15 @@
-# Nutristat
+# Coach Running Android (MVP v0.1)
 
-Application Android de suivi nutritionnel quotidien.
+Branche dédiée sans modification de Nutristat/main.
 
-## V1
-- plusieurs profils et objectifs personnalisés ;
-- calories, protéines, lipides, glucides, fibres et sucre ;
-- base d'aliments locale modifiable ;
-- recettes avec portions ;
-- saisie de repas ;
-- calendrier et bilan journalier ;
-- graphiques sur 7 ou 30 jours ;
-- historique du poids ;
-- fonctionnement hors connexion ;
-- schéma Supabase fourni pour la future synchronisation cloud.
+L'application propose :
+- Objectifs multiples, proposition et validation des séances, calendrier modifiable et recalcul prudent.
+- Import CSV et suivi Strava par jeton personnel temporaire, analyses des entraînements.
+- Discussions OpenAI ou Claude **par clé API individuelle**, conversations locales par objectif.
+- Sauvegarde et restauration locale JSON.
 
-L'APK de test est produit automatiquement par GitHub Actions.
+**Restrictions** : pas de connexion directe aux abonnements Claude.ai/ChatGPT ni aux Projets externes, pas d'OAuth Strava à renouvellement automatique, pas encore d'intégration directe Mi Fitness/Health Connect. Les requêtes IA sont facturables selon le fournisseur.
+
+Le code source Android est conservé comme archive XZ décomposée en 7 parties texte dans `coach-parts/`. Le workflow GitHub Actions le réassemble, vérifie le SHA256 et construit une APK de test téléchargeable via Artifacts.
+
+Version de test non signée pour publication Play Store : il s'agit d'une APK **debug** signée automatiquement pour installation manuelle.
