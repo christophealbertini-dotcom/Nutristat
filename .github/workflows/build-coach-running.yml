@@ -1,4 +1,4 @@
-name: Coach Running 0.3 - APK Android
+name: Coach Running 0.4 - APK Android
 on:
   push:
     branches: [ coach-running-mvp ]
@@ -10,48 +10,47 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Reconstituer le projet Android
+      - name: Reconstituer la base Android
         shell: bash
         run: |
           mkdir -p coach-running
-          cat coach-parts/part-*.b64 | base64 --decode > coach-running-build.tar.xz
-          echo "20c2a10065cacb2b2ef87a85ddb17aec597a38105beb7bd5337dc31e6d07d600  coach-running-build.tar.xz" | sha256sum -c -
-          tar -xJf coach-running-build.tar.xz -C coach-running
-      - name: Appliquer mise à niveau 0.2 (imports et coach adaptatif)
+          cat coach-parts/part-*.b64 | base64 --decode > coach-running-base.tar.xz
+          echo "20c2a10065cacb2b2ef87a85ddb17aec597a38105beb7bd5337dc31e6d07d600  coach-running-base.tar.xz" | sha256sum -c -
+          tar -xJf coach-running-base.tar.xz -C coach-running
+      - name: Appliquer le module 0.2 - imports et historique
         shell: bash
         run: |
-          cat coach-v02-parts/part-*.b64 | base64 --decode > coach-running-v02-overlay.tar.xz
-          echo "3f3030b50f0a131dffa63fd3d67f52fd58def3d6ea8847af081e33640988ecb9  coach-running-v02-overlay.tar.xz" | sha256sum -c -
-          tar -xJf coach-running-v02-overlay.tar.xz -C coach-running
-          patch -d coach-running -p1 < coach-running/native.patch
+          cat coach-v02-parts/part-*.b64 | base64 --decode > coach-running-v02.tar.xz
+          echo "3f3030b50f0a131dffa63fd3d67f52fd58def3d6ea8847af081e33640988ecb9  coach-running-v02.tar.xz" | sha256sum -c -
+          tar -xJf coach-running-v02.tar.xz -C coach-running
+          patch --batch -d coach-running -p1 < coach-running/native.patch
           sed -i 's/base\*Math.pow(1.08,w)/base*Math.min(2.2,Math.pow(1.055,w))/' coach-running/app/src/main/assets/app.js
-          sed -i 's/VERSION 0.1/VERSION 0.2/g' coach-running/app/src/main/assets/index.html
-          sed -i 's@<script src="app.js"></script>@<script src="app.js"></script><script src="imports.js"></script><script src="coach.js"></script>@g' coach-running/app/src/main/assets/index.html
-          sed -i 's/versionCode 1/versionCode 2/g; s/versionName '\''0.1.0'\''/versionName '\''0.2.0'\''/g' coach-running/app/build.gradle
-      - name: Mettre à niveau Coach Running 0.3
+      - name: Appliquer le module 0.3 - entraînements et analyses
         shell: bash
         run: |
-          cat coach-v03-parts/part-*.b64 | base64 --decode > coach-running-v03-overlay.tar.xz
-          echo "d32407f24e18c130aa9f0da66caa04b7ae043c49be541898fad74be700b0dd43  coach-running-v03-overlay.tar.xz" | sha256sum -c -
-          mkdir -p /tmp/coach-running-overlay03
-          tar -xJf coach-running-v03-overlay.tar.xz -C /tmp/coach-running-overlay03
-          patch -d coach-running -p1 < /tmp/coach-running-overlay03/native03.patch
-          cp /tmp/coach-running-overlay03/training.js coach-running/app/src/main/assets/training.js
-          cp /tmp/coach-running-overlay03/README.md coach-running/README.md
-          sed -i 's/VERSION 0.2/VERSION 0.3/g; s@<script src="coach.js"></script>@<script src="coach.js"></script><script src="training.js"></script>@g; s@</head>@<link rel="stylesheet" href="training.css"></head>@g' coach-running/app/src/main/assets/index.html
-          sed -i "s/versionCode 2/versionCode 3/g; s/versionName '0.2.0'/versionName '0.3.0'/g" coach-running/app/build.gradle
-          cat > coach-running/app/src/main/assets/training.css <<'CSS'
-          .zonebar{display:flex;overflow:hidden;border-radius:12px;height:17px;background:#334157;margin:12px 0}.zonebar i{height:100%;display:block}.zonelegend{display:flex;gap:9px;flex-wrap:wrap;color:#aabdd1;font-size:11px;margin-bottom:14px}.zonelegend span{display:inline-flex;align-items:center;gap:5px}.zonelegend em{width:10px;height:10px;border-radius:50%;display:inline-block}.gaugeline{margin:15px 0}.gaugeline b,.gaugeline span{font-size:12px}.gauge{height:11px;background:#354358;border-radius:20px;overflow:hidden;margin:8px 0}.gauge>i{display:block;height:100%;border-radius:20px;background:linear-gradient(90deg,#68b7e9,#adf168)}.cat-easy{color:#60d4a4}.cat-long{color:#62ade5}.cat-threshold{color:#efc477}.cat-interval{color:#fa9781}.cat-race{color:#d4a2ff}.cat-recovery{color:#9dadc0}.cat-free{color:#9dadc0}.trace{margin:14px 0;background:#1d293d;padding:12px;border-radius:12px}.trace svg{width:100%;height:110px}.trace>small{display:block;font-size:10px;color:#9cabc0}
-          CSS
-          node --check coach-running/app/src/main/assets/app.js
-          node --check coach-running/app/src/main/assets/imports.js
-          node --check coach-running/app/src/main/assets/coach.js
-          node --check coach-running/app/src/main/assets/training.js
+          mkdir -p /tmp/coach03
+          cat coach-v03-parts/part-*.b64 | base64 --decode > coach-running-v03.tar.xz
+          echo "d32407f24e18c130aa9f0da66caa04b7ae043c49be541898fad74be700b0dd43  coach-running-v03.tar.xz" | sha256sum -c -
+          tar -xJf coach-running-v03.tar.xz -C /tmp/coach03
+          patch --batch -d coach-running -p1 < /tmp/coach03/native03.patch
+          cp /tmp/coach03/training.js coach-running/app/src/main/assets/training.js
+      - name: Appliquer le module 0.4 - évaluation de niveau et types de séance
+        shell: bash
+        run: |
+          base64 --decode coach-v04/level04.js.gz.b64 > /tmp/coach04.js.gz
+          echo "670075d5d300874bab6087e77f2159585af744e1d038aa5140a5d5ae7f4a9c48  /tmp/coach04.js.gz" | sha256sum -c -
+          gzip -dc /tmp/coach04.js.gz > coach-running/app/src/main/assets/level04.js
+          base64 --decode coach-v04/index.html.gz.b64 > /tmp/coach04.html.gz
+          echo "600c5891b177b24f87a45338dc3525de8ea3f2b112cb776e417d5d10f668d650  /tmp/coach04.html.gz" | sha256sum -c -
+          gzip -dc /tmp/coach04.html.gz > coach-running/app/src/main/assets/index.html
+          sed -i "s/versionCode 1/versionCode 4/;s/versionName '0.1.0'/versionName '0.4.0'/" coach-running/app/build.gradle
+          node --check coach-running/app/src/main/assets/level04.js
+          grep -q 'level04.js' coach-running/app/src/main/assets/index.html
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: '17'
-      - name: Installer la plateforme Android
+      - name: Installer Android SDK
         run: |
           SDKMGR="$(find "$ANDROID_HOME/cmdline-tools" -type f -name sdkmanager | head -n 1)"
           echo "y" | "$SDKMGR" --licenses >/dev/null || true
@@ -59,18 +58,15 @@ jobs:
       - uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '8.11.1'
-      - name: Compiler APK debug
+      - name: Compiler l'APK de test
         run: gradle -p coach-running --no-daemon assembleDebug
       - uses: actions/upload-artifact@v4
         with:
-          name: CoachRunning-v0.3-Android-APK
+          name: CoachRunning-v0.4-APK
           path: coach-running/app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
       - uses: actions/upload-artifact@v4
         with:
-          name: CoachRunning-v0.3-Base-Source
-          path: coach-running-build.tar.xz
-      - uses: actions/upload-artifact@v4
-        with:
-          name: CoachRunning-v0.3-Full-Source
+          name: CoachRunning-v0.4-Source
           path: coach-running/
+          if-no-files-found: error
