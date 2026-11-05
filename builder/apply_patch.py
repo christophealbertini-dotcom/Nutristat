@@ -61,3 +61,46 @@ body=p.read_text(encoding="utf-8")
 body=body.replace('android:label="Шагомер"','android:label="PulseLab Watch Connector"')
 p.write_text(body,encoding="utf-8")
 print("PulseLab bridge installed with automatic JSON export")
+
+
+# Interface française limitée aux fonctions du connecteur.
+shutil.copy2("builder/MainActivityFR.kt", src/"MainActivity.kt")
+
+# Traduction des notifications et des types de séances transmis au module export.
+p=src/"service/WatchConnectionService.kt"
+body=p.read_text(encoding="utf-8")
+for old,new in {
+    '"Часы отключены"': '"Montre déconnectée"',
+    '"Часы подключены"': '"Montre connectée"',
+    '"Шагомер"': '"PulseLab Watch Connector"',
+}.items():
+    body=body.replace(old,new)
+p.write_text(body,encoding="utf-8")
+
+p=src/"health/ActivitySync.kt"
+body=p.read_text(encoding="utf-8")
+for old,new in {
+    '"Бег"': '"Course à pied"',
+    '"Ходьба"': '"Marche"',
+    '"Беговая дорожка"': '"Tapis de course"',
+    '"Велосипед"': '"Vélo"',
+    '"Велотренажёр"': '"Vélo d’intérieur"',
+    '"Свободная"': '"Entraînement libre"',
+    '"Плавание"': '"Natation"',
+    '"Эллиптический"': '"Elliptique"',
+    '"Гребля"': '"Rameur"',
+    '"Скакалка"': '"Corde à sauter"',
+    '"Тренировка #$subtype"': '"Entraînement #$subtype"',
+}.items():
+    body=body.replace(old,new)
+p.write_text(body,encoding="utf-8")
+
+# Variante .fr avec installation sans conflit avec l'ancienne APK debug signée
+# sur un autre runner GitHub.
+p=root/"app/build.gradle.kts"
+body=p.read_text(encoding="utf-8")
+body=body.replace('applicationId = "com.pulselab.watchconnector"',
+                  'applicationId = "com.pulselab.watchconnector.fr"')
+body=body.replace('versionName = "1.0.0"','versionName = "0.2.0-fr"')
+p.write_text(body,encoding="utf-8")
+print("Interface française et notifications françaises appliquées")
