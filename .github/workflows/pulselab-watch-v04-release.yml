@@ -1,0 +1,31 @@
+name: PulseLab Watch Connector v0.4 - direct APK download
+on:
+  push:
+    branches:
+      - build/pulselab-watch-connector-v04
+    paths:
+      - .github/workflows/pulselab-watch-v04-release.yml
+
+permissions:
+  contents: write
+  actions: read
+
+jobs:
+  publish-apk:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - name: Download verified v0.4 APK from completed CI run
+        run: |
+          mkdir -p _apk
+          gh run download 42046582866 --repo "$GITHUB_REPOSITORY" --name "PulseLab-WatchConnector-FR-v04-Diagnostics" --dir _apk
+          test -s _apk/app-debug.apk
+          file _apk/app-debug.apk
+          mv _apk/app-debug.apk _apk/PulseLab_WatchConnector_FR_v04_Synchronisation.apk
+          sha256sum _apk/PulseLab_WatchConnector_FR_v04_Synchronisation.apk
+
+      - name: Publish public v0.4 prerelease APK
+        run: |
+          gh release create "pulselab-watch-connector-v0.4-fr"             "_apk/PulseLab_WatchConnector_FR_v04_Synchronisation.apk"             --repo "$GITHUB_REPOSITORY"             --target "e1eb08f1f97368b0df4ff4c3dcc418de617957f8"             --title "PulseLab Watch Connector v0.4 FR - Diagnostic Bluetooth"             --notes "APK Android de test pour Redmi Watch 5 Lite. Diagnostic detaille de synchronisation, journal exportable et sauvegarde locale. Aucune cle Bluetooth personnelle incluse. Synchronisation complete a valider physiquement."             --prerelease
