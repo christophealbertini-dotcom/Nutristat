@@ -2,9 +2,9 @@ name: PulseLab Watch Connector Android APK
 on:
   push:
     branches:
-      - build/pulselab-watch-connector-v04
+      - build/pulselab-watch-connector-v05
 permissions:
-  contents: read
+  contents: write
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -35,6 +35,8 @@ jobs:
         run: python3 builder/patch_sync.py connector
       - name: Apply v0.4 timeout, ACK and diagnostic log fixes
         run: python3 builder/patch_v04.py connector
+      - name: Add offline Xiaomi archive importer
+        run: python3 builder/patch_archive_v05.py connector
       - name: Compile APK
         working-directory: connector
         run: |
@@ -43,7 +45,14 @@ jobs:
       - name: Upload installable APK
         uses: actions/upload-artifact@v4
         with:
-          name: PulseLab-WatchConnector-FR-v04-Diagnostics
+          name: PulseLab-WatchConnector-FR-v05-Xiaomi-Archive
           path: connector/app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
           retention-days: 7
+      - name: Publish directly downloadable public APK
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          cp connector/app/build/outputs/apk/debug/app-debug.apk PulseLab_WatchConnector_FR_v05_Import_Xiaomi.apk
+          sha256sum PulseLab_WatchConnector_FR_v05_Import_Xiaomi.apk
+          gh release create "pulselab-watch-connector-v0.5-fr"             "PulseLab_WatchConnector_FR_v05_Import_Xiaomi.apk"             --repo "$GITHUB_REPOSITORY"             --target "$GITHUB_SHA"             --title "Pulse Lab Watch Connector v0.5 FR – Import Xiaomi + Bluetooth"             --notes "Version d'essai Android : Bluetooth direct + import local d'archives officielles Mi Fitness ZIP/CSV (hlth_center_sport_record). Aucun accès au compte Xiaomi dans l'application ; export historique à demander via account.xiaomi.com. Pas de garantie de GPS dans le CSV. Les fichiers sont stockés localement sous Téléchargements/PulseLab/WatchInbox/MiFitnessImport."             --prerelease
