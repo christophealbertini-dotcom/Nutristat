@@ -1,0 +1,28 @@
+name: PulseLab Watch - direct APK download
+on:
+  push:
+    branches:
+      - build/pulselab-watch-connector-v01
+
+permissions:
+  contents: write
+  actions: read
+
+jobs:
+  publish-apk:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - name: Download already compiled French APK
+        run: |
+          mkdir -p _apk
+          gh run download 42039720004 --repo "$GITHUB_REPOSITORY" --name "PulseLab-WatchConnector-AutoSync-Android15" --dir _apk
+          test -s _apk/app-debug.apk
+          mv _apk/app-debug.apk _apk/PulseLab_WatchConnector_FR_v03_Diagnostic.apk
+          sha256sum _apk/PulseLab_WatchConnector_FR_v03_Diagnostic.apk
+          file _apk/PulseLab_WatchConnector_FR_v03_Diagnostic.apk
+      - name: Publish public prerelease download without user credentials
+        run: |
+          gh release create "pulselab-watch-connector-v0.3-fr"             "_apk/PulseLab_WatchConnector_FR_v03_Diagnostic.apk"             --repo "$GITHUB_REPOSITORY"             --target "5727cb7aa2b55ab8676dd83dfc856053b1037512"             --title "PulseLab Watch Connector v0.3 FR (APK de diagnostic)"             --notes "APK de test pour Redmi Watch 5 Lite. Bluetooth direct, synchronisation séquentielle et export local. Aucune clé personnelle intégrée. Test avec montre nécessaire."             --prerelease
