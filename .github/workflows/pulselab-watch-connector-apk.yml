@@ -2,7 +2,7 @@ name: PulseLab Watch Connector Android APK
 on:
   push:
     branches:
-      - build/pulselab-watch-connector-v01
+      - build/pulselab-watch-connector-v04
 permissions:
   contents: read
 jobs:
@@ -33,6 +33,8 @@ jobs:
         run: python3 builder/apply_patch.py connector
       - name: Apply safe sequential watch sync and diagnostics
         run: python3 builder/patch_sync.py connector
+      - name: Apply v0.4 timeout, ACK and diagnostic log fixes
+        run: python3 builder/patch_v04.py connector
       - name: Compile APK
         working-directory: connector
         run: |
@@ -41,7 +43,7 @@ jobs:
       - name: Upload installable APK
         uses: actions/upload-artifact@v4
         with:
-          name: PulseLab-WatchConnector-AutoSync-Android15
+          name: PulseLab-WatchConnector-FR-v04-Diagnostics
           path: connector/app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
           retention-days: 7
