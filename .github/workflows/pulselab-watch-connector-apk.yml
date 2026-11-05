@@ -1,4 +1,4 @@
-name: PulseLab Watch Connector debug APK
+name: PulseLab Watch Connector Android APK
 on:
   push:
     branches:
@@ -10,6 +10,8 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 45
     steps:
+      - name: Checkout isolated build adapter
+        uses: actions/checkout@v4
       - name: Set up Java
         uses: actions/setup-java@v4
         with:
@@ -17,7 +19,6 @@ jobs:
           java-version: '17'
       - name: Verify Android SDK 36
         run: |
-          echo "ANDROID_HOME=$ANDROID_HOME"
           ls "$ANDROID_HOME/platforms"
           ls "$ANDROID_HOME/build-tools"
           if [ ! -d "$ANDROID_HOME/platforms/android-36" ]; then
@@ -28,7 +29,9 @@ jobs:
           git clone https://github.com/judas-priest/pedometer.git connector
           cd connector
           git checkout 9bf62fbc5ebd74a51605196e2367c8baf04d3cb3
-      - name: Build signed debug APK
+      - name: Apply PulseLab independent export adapter
+        run: python3 builder/apply_patch.py connector
+      - name: Compile APK
         working-directory: connector
         run: |
           chmod +x gradlew
@@ -36,7 +39,7 @@ jobs:
       - name: Upload installable APK
         uses: actions/upload-artifact@v4
         with:
-          name: PulseLab-WatchConnector-Android15-test
+          name: PulseLab-WatchConnector-AutoSync-Android15
           path: connector/app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
           retention-days: 7
