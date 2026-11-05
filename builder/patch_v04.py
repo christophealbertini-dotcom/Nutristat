@@ -91,19 +91,13 @@ change(act,
                         onStatus("Mesure manuelle enregistrée et acquittée.")
                     }
 ''')
-change(act,
-    '''    private fun persistAndAck(workout: WorkoutSummary, fileId: ByteArray) {
-        try {
-            runBlocking { onWorkoutPersist?.invoke(workout) }
-            ackFile(fileId)
-        } catch (e: Exception) {
-            Log.e(TAG, "Workout parse failed; not ACKing file " +
-                "(subtype/version preserved in workout_dumps/)", e)
-            onStatus("Échec de l’enregistrement de la séance. Fichier brut conservé, non acquitté.")
-        }
-    }
-''',
-    '''    private fun persistAndAck(workout: WorkoutSummary, fileId: ByteArray): Boolean {
+# The previous patch deliberately altered an error message; replace the
+# entire tiny method to avoid depending on the upstream log-message text.
+p = act
+body = p.read_text(encoding="utf-8")
+start = body.index("    private fun persistAndAck(")
+end = body.index("    fun handleCommand(", start)
+body = body[:start] + '''    private fun persistAndAck(workout: WorkoutSummary, fileId: ByteArray): Boolean {
         return try {
             runBlocking { onWorkoutPersist?.invoke(workout) }
             ackFile(fileId)
@@ -114,7 +108,9 @@ change(act,
             false
         }
     }
-''')
+
+''' + body[end:]
+p.write_text(body, encoding="utf-8")
 change(act,
     '''                    workout != null && onWorkoutPersist != null ->
                         persistAndAck(workout, fileId)
