@@ -31,6 +31,8 @@ jobs:
           git checkout 9bf62fbc5ebd74a51605196e2367c8baf04d3cb3
       - name: Apply PulseLab independent export adapter
         run: python3 builder/apply_patch.py connector
+      - name: Apply safe sequential watch sync and diagnostics
+        run: python3 builder/patch_sync.py connector
       - name: Compile APK
         working-directory: connector
         run: |
