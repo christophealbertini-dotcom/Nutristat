@@ -1,0 +1,38 @@
+name: PulseLab Watch Connector debug APK
+on:
+  push:
+    branches:
+      - build/pulselab-watch-connector-v01
+permissions:
+  contents: read
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+      - name: Install Android SDK 36
+        run: sdkmanager "platforms;android-36" "build-tools;36.0.0"
+      - name: Clone protocol implementation
+        run: |
+          git clone https://github.com/judas-priest/pedometer.git connector
+          cd connector
+          git checkout 9bf62fbc5ebd74a51605196e2367c8baf04d3cb3
+      - name: Build signed debug APK
+        working-directory: connector
+        run: |
+          chmod +x gradlew
+          ./gradlew --no-daemon assembleDebug --stacktrace
+      - name: Upload installable APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: PulseLab-WatchConnector-Android15-test
+          path: connector/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
+          retention-days: 7
