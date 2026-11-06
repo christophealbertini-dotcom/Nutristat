@@ -2,7 +2,7 @@ name: PulseLab Watch Connector Android APK
 on:
   push:
     branches:
-      - build/pulselab-watch-connector-v06
+      - build/pulselab-watch-connector-v07
 permissions:
   contents: write
 jobs:
@@ -37,6 +37,8 @@ jobs:
         run: python3 builder/patch_v04.py connector
       - name: Apply experimental archive listing probe (v0.6)
         run: python3 builder/patch_v06.py connector
+      - name: Add protected historical workout re-fetch (v0.7)
+        run: python3 builder/patch_v07.py connector
       - name: Compile APK
         working-directory: connector
         run: |
@@ -45,7 +47,7 @@ jobs:
       - name: Upload installable APK
         uses: actions/upload-artifact@v4
         with:
-          name: PulseLab-WatchConnector-FR-v06-ArchiveProbe
+          name: PulseLab-WatchConnector-FR-v07-HistoryRecover
           path: connector/app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
           retention-days: 7
@@ -55,6 +57,6 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          cp connector/app/build/outputs/apk/debug/app-debug.apk PulseLab_WatchConnector_FR_v06_Archives_Test.apk
-          sha256sum PulseLab_WatchConnector_FR_v06_Archives_Test.apk
-          gh release create "pulselab-watch-connector-v0.6-fr" "PulseLab_WatchConnector_FR_v06_Archives_Test.apk" --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --title "Pulse Lab Watch Connector v0.6 FR - relecture archives experimentale" --notes "Essai de recuperation des seances garde-es sur Redmi Watch 5 Lite. Variante de requete Xiaomi inconnue; la relecture des 20 seances n'est PAS encore validee. Connexion Bluetooth directe; pas de reset et pas de cle embarquee." --prerelease
+          cp connector/app/build/outputs/apk/debug/app-debug.apk PulseLab_WatchConnector_FR_v07_Historique_Securise.apk
+          sha256sum PulseLab_WatchConnector_FR_v07_Historique_Securise.apk
+          gh release create "pulselab-watch-connector-v0.7-fr" "PulseLab_WatchConnector_FR_v07_Historique_Securise.apk" --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --title "PulseLab Watch v0.7 FR - relecture historique ciblee" --notes "Redmi Watch 5 Lite. Recuperation des seances transferees apres import local du ZIP de journaux Mi Fitness. Relecture experimentale non garantie par le firmware; CRC32, fichiers bruts, sans ACK sur les essais historiques. Aucun reset, aucune cle personnelle integree. Affiche version 0.7." --prerelease
