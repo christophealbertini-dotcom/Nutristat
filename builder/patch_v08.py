@@ -66,8 +66,8 @@ change(repo,
             else "Enregistrement impossible. Utilise Copier le journal ou Partager le journal.")
 ''')
 change(repo,
-    '''(existing + "\n" + timestamp + " • " + message).takeLast(6500)''',
-    '''(existing + "\n" + timestamp + " • " + message).takeLast(30000)''')
+    '''(existing + "\\n" + timestamp + " • " + message).takeLast(6500)''',
+    '''(existing + "\\n" + timestamp + " • " + message).takeLast(30000)''')
 change(repo,
     '''MutableStateFlow("Diagnostic de synchronisation – v0.7")''',
     '''MutableStateFlow("Diagnostic de synchronisation – v0.8")''')
