@@ -41,7 +41,7 @@ jobs:
         run: python3 builder/patch_v07.py connector
       - name: Repair Mi Fitness importer and diagnostic sharing (v0.8)
         run: python3 builder/patch_v08.py connector
-      - name: v1.1: back to proven v0.8 transport, sport-only, strict no-ACK
+      - name: "v1.1 sport-only no-ACK from v0.8 transfer engine"
         run: python3 builder/patch_v11.py connector
       - name: Compile APK
         working-directory: connector
