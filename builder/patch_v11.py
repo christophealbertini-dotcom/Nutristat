@@ -50,7 +50,7 @@ replace_section(activity,
 # cannot block our sport transfers as it did in the v0.9 logs.
 replace_section(activity,
     "    private fun parseFileIds(data: ByteArray) {\n",
-    "    /** Returns the parsed workout",
+    "    private fun processFile(fileId: ByteArray, data: ByteArray): WorkoutSummary? {",
     '''    private fun parseFileIds(data: ByteArray) {
         val fileCount = data.size / 7
         val sports = mutableListOf<ByteArray>()
