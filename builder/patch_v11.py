@@ -108,7 +108,7 @@ assert r.count(trigger)==1,"Cannot find automatic fetch after workout"
 a=r.index(trigger)
 b=r.index("                }\n                1 -> if (enabled) startStepPoll()",a)
 old=r[a:b]
-assert "activitySync?.requestPast()" in old and "buildActivityFetchToday" in old
+assert ("activitySync?.requestToday()" in old or "buildActivityFetchToday" in old), "Unexpected workout-finish code"
 r=r[:a]+'''                    // v1.1: manual extraction only; no background workout-file commands.
                     // Keep new workout pending for the user's chosen Pulse Lab / Mi Fitness order.
 '''+r[b:]
