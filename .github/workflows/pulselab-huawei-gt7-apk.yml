@@ -1,0 +1,47 @@
+name: PulseLab Huawei GT 7 Android APK
+on:
+  push:
+    branches:
+      - build/pulselab-huawei-gt7-v20
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - name: Checkout Huawei GT7 app
+        uses: actions/checkout@v4
+      - name: Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Gradle 8.11.1
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.11.1'
+      - name: Verify Android platform 35
+        run: |
+          if [ ! -d "$ANDROID_HOME/platforms/android-35" ]; then
+            "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" "platforms;android-35" "build-tools;35.0.0"
+          fi
+      - name: Compile Huawei GT7 importer
+        working-directory: huawei-gt7
+        run: gradle --no-daemon :app:assembleDebug --stacktrace
+      - name: Publish APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: PulseLab-Huawei-GT7-v20
+          path: huawei-gt7/app/build/outputs/apk/debug/app-debug.apk
+          retention-days: 14
+          if-no-files-found: error
+      - name: Publish APK release
+        if: success()
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          cp huawei-gt7/app/build/outputs/apk/debug/app-debug.apk PulseLab_Huawei_GT7_Import_FR_v20.apk
+          sha256sum PulseLab_Huawei_GT7_Import_FR_v20.apk
+          gh release create "pulselab-huawei-gt7-v2.0-fr" PulseLab_Huawei_GT7_Import_FR_v20.apk --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --title "Pulse Lab Huawei GT7 v2.0 FR - FIT, GPX, TCX vers JSON" --notes "Separate Huawei GT7 FIT GPX TCX activity importer using file picker and optional WorkManager SAF folder scan. All exports local in Downloads/PulseLab/WatchInbox. No Bluetooth, ACK, Huawei key, cloud permission or Internet. Real GT7 file validation pending." --prerelease
