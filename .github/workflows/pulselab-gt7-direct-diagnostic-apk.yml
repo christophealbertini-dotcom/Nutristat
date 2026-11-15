@@ -1,0 +1,51 @@
+name: Pulse Lab GT7 Bluetooth test APK
+on:
+  push:
+    branches:
+      - build/pulselab-gt7-direct-diagnostic-v01
+permissions:
+  contents: write
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 55
+    steps:
+      - name: Checkout Pulse Lab diagnostic adapter
+        uses: actions/checkout@v4
+      - name: Set up Java 21 for Gadgetbridge
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Checkout Gadgetbridge upstream from Codeberg
+        run: |
+          git clone --depth 1 https://codeberg.org/Freeyourgadget/Gadgetbridge.git gadgetbridge
+          cd gadgetbridge
+          git rev-parse HEAD
+      - name: Ensure Android SDK 36 is installed
+        run: |
+          if [ ! -d "$ANDROID_HOME/platforms/android-36" ]; then
+            "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" "platforms;android-36" "build-tools;36.0.0"
+          fi
+      - name: Add standalone Pulse Lab GT7 diagnostic launcher
+        run: python3 builder/patch_gt7_direct_diag.py gadgetbridge
+      - name: Compile Gadgetbridge Huawei GT7 debug test
+        working-directory: gadgetbridge
+        run: |
+          chmod +x gradlew
+          ./gradlew --no-daemon :app:assembleMainlineDebug --stacktrace
+      - name: Upload test APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: PulseLab-GT7-Bluetooth-Diagnostic-APK
+          path: gadgetbridge/app/build/outputs/apk/mainline/debug/*.apk
+          retention-days: 14
+          if-no-files-found: error
+      - name: Release standalone GT7 test
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          ls -l gadgetbridge/app/build/outputs/apk/mainline/debug/
+          cp gadgetbridge/app/build/outputs/apk/mainline/debug/*.apk PulseLab_GT7_Bluetooth_Diagnostic_v01.apk
+          sha256sum PulseLab_GT7_Bluetooth_Diagnostic_v01.apk
+          gh release create "pulselab-gt7-direct-diagnostic-v0.1" PulseLab_GT7_Bluetooth_Diagnostic_v01.apk --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --title "Pulse Lab GT7 direct Bluetooth diagnostic v0.1 (Gadgetbridge)" --notes "Experimental GT7 direct Bluetooth test based on upstream Gadgetbridge AGPL-3.0 (current Codeberg checkout, commit visible in CI); app includes built-in GT7 pairing, manual workout fetch and FIT/GPX/raw export plus a second Pulse Lab journal launcher to copy/share the log. IMPORTANT: prior Huawei Health pairing may require Huawei account ID; stop official app before connecting; do not factory-reset/dissociate watch. Underlying Huawei transfer behavior is NOT guaranteed read-only for coexistence with Huawei Health. Source patch public in this repository branch; full upstream source: https://codeberg.org/Freeyourgadget/Gadgetbridge. Not tested on actual GT7." --prerelease
