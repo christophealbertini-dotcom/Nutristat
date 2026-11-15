@@ -13,10 +13,21 @@ assert (app/"build.gradle").is_file(), "Expected Gadgetbridge source layout"
 gradle=app/"build.gradle"
 s=gradle.read_text()
 # Keep a separate app ID so the test can coexist with Huawei Health and Pulse Lab.
-before='applicationId "nodomain.freeyourgadget.gadgetbridge"'
-assert s.count(before)==1, "Unexpected Gadgetbridge Gradle project"
-s=s.replace(before,'applicationId "com.pulselab.gt7directtest"')
+import re
+# Upstream changes quotation/assignment styles across releases. Scope this to
+# defaultConfig, not the alternate banglejs applicationId.
+start=s.index("defaultConfig {")
+end=s.index("signingConfigs {",start)
+region=s[start:end]
+new_region,n=re.subn(
+    r'(?m)^(\\s*applicationId\\s*(?:=\\s*|\\s+))["\\'][^"\\']+["\\']',
+    r'\\1"com.pulselab.gt7directtest"',region,count=1)
+if n==0:
+    new_region=region.replace("defaultConfig {",
+        'defaultConfig {\\n        applicationId "com.pulselab.gt7directtest"',1)
+s=s[:start]+new_region+s[end:]
 gradle.write_text(s)
+print("GT7 gradle package patched; old app IDs:",re.findall(r'(?m)^\\s*applicationId[^\\n]*',region)[:3])
 
 # Keep the existing complete pairing, device discovery, Huawei protocol and
 # workout export pipeline from upstream. No direct patches to sync state/ACK.
@@ -174,7 +185,9 @@ manifest.write_text(text.replace("</application>",add+"    </application>"))
 strings=app/"src/main/res/values/strings.xml"
 s=strings.read_text()
 old='<string name="application_name_generic">Gadgetbridge</string>'
-assert s.count(old)==1
-strings.write_text(s.replace(old,'<string name="application_name_generic">Pulse Lab GT7 - Gadgetbridge</string>'))
+if old in s:
+    strings.write_text(s.replace(old,'<string name="application_name_generic">Pulse Lab GT7 - Gadgetbridge</string>'))
+else:
+    print("Upstream app name no longer uses the generic resource; using launcher label.")
 
 print("Pulse Lab GT7: upstream Huawei transport retained, manual workout fetch, full shareable diagnostic, source AGPL")
