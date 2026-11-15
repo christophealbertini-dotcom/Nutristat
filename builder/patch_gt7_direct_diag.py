@@ -13,21 +13,25 @@ assert (app/"build.gradle").is_file(), "Expected Gadgetbridge source layout"
 gradle=app/"build.gradle"
 s=gradle.read_text()
 # Keep a separate app ID so the test can coexist with Huawei Health and Pulse Lab.
-import re
-# Upstream changes quotation/assignment styles across releases. Scope this to
-# defaultConfig, not the alternate banglejs applicationId.
+# Support changed upstream applicationId syntax inside defaultConfig only.
 start=s.index("defaultConfig {")
 end=s.index("signingConfigs {",start)
 region=s[start:end]
-new_region,n=re.subn(
-    r'(?m)^(\\s*applicationId\\s*(?:=\\s*|\\s+))["\\'][^"\\']+["\\']',
-    r'\\1"com.pulselab.gt7directtest"',region,count=1)
-if n==0:
-    new_region=region.replace("defaultConfig {",
-        'defaultConfig {\\n        applicationId "com.pulselab.gt7directtest"',1)
-s=s[:start]+new_region+s[end:]
+lines=region.splitlines(keepends=True)
+changed=False
+for i,line in enumerate(lines):
+    if line.lstrip().startswith("applicationId ") or line.lstrip().startswith("applicationId ="):
+        lines[i]='        applicationId "com.pulselab.gt7directtest"\n'
+        changed=True
+        break
+if not changed:
+    for i,line in enumerate(lines):
+        if "defaultConfig {" in line:
+            lines.insert(i+1,'        applicationId "com.pulselab.gt7directtest"\n')
+            break
+s=s[:start]+"".join(lines)+s[end:]
 gradle.write_text(s)
-print("GT7 gradle package patched; old app IDs:",re.findall(r'(?m)^\\s*applicationId[^\\n]*',region)[:3])
+print("GT7: separate diagnostic applicationId prepared")
 
 # Keep the existing complete pairing, device discovery, Huawei protocol and
 # workout export pipeline from upstream. No direct patches to sync state/ACK.
