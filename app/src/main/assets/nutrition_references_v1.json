@@ -628,7 +628,7 @@
       "age_18_64": 0.83,
       "age_65_et_plus": 1
     },
-    "formule_proteines": "max(0.15 * kcal / 4, minimum_proteines_g_kg_j * poids_kg + supplement_proteines_situation_g), arrondi au gramme",
+    "formule_proteines": "arrondi_au_gramme(max(0.15 * calories_total / 4, proteines_minimum_g_kg * poids_reference_kg + supplement_situation_g, max(0.15 * calories_hors_supplement_situation / 4, proteines_minimum_g_kg * poids_reference_kg) + supplement_situation_g))",
     "formule_lipides": "arrondi_au_gramme(0.37 * kcal / 9)",
     "formule_glucides": "arrondi_au_gramme((kcal - 4*proteines_g - 9*lipides_g)/4), sous reserve d'une valeur positive et des plages de reference",
     "fibres_g_j": 30,
@@ -668,7 +668,9 @@
       "femme",
       "homme"
     ],
-    "source_mifflin_perimetre": "Equation évaluée chez des adultes de 19 à 78 ans; usage à 18 ans ou après 78 ans extrapolé."
+    "source_mifflin_perimetre": "Equation évaluée chez des adultes de 19 à 78 ans; usage à 18 ans ou après 78 ans extrapolé.",
+    "precision_situation": "En grossesse/allaitement, les suppléments protéiques s'ajoutent à la cible calculée hors supplément énergétique; la base protéique n'est pas simplement recalculée sur les nouvelles kcal.",
+    "recommandation_calcul": "Pour éviter un objectif irréaliste en cas de poids très atypique ou de profil clinique complexe, signaler plutôt que forcer un calcul hors des intervalles ANSES."
   },
   "integration_nutristat": {
     "depot_suggere": "app/src/main/assets/nutrition_references_v1.json",
